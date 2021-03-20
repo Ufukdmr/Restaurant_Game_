@@ -27,10 +27,10 @@ public class TileMapManager : MonoBehaviour
 
     private static TileMapManager instance;
 
-    HashSet<Vector3Int> placeableTile;
-    HashSet<Vector3Int> notPlaceableTile;
+    HashSet<TileControl> placeableTile;
+    HashSet<TileControl> notPlaceableTile;
 
-    private bool isInitialize=false;
+    private bool isInitialize = false;
 
     public static TileMapManager MyInstance
     {
@@ -60,29 +60,50 @@ public class TileMapManager : MonoBehaviour
                 Vector3Int clickPos = tileMap[0].WorldToCell(new Vector3(mouseWorldPos.x, mouseWorldPos.y, transform.position.z));
 
                 ChangeTile(clickPos);
+
             }
         }
     }
 
-    public void Initialize(HashSet<Vector3Int> groundTile, HashSet<Vector3Int> notWalkableTiles)
+    public void Initialize(HashSet<TileControl> groundTile, HashSet<TileControl> notWalkableTiles, HashSet<TileControl> wallTile)
     {
-        placeableTile = new HashSet<Vector3Int>();
-        notPlaceableTile = new HashSet<Vector3Int>();
-        isInitialize=true;
+        placeableTile = new HashSet<TileControl>();
+        notPlaceableTile = new HashSet<TileControl>();
+        isInitialize = true;
 
-        foreach (Vector3Int tile in groundTile)
+        if (tileType == TileType.Table)
         {
-            placeableTile.Add(tile);
+            foreach (TileControl tile in groundTile)
+            {
+                if (tile.I != 2)
+                {
+                    placeableTile.Add(tile);
+                }
+                else
+                {
+                    notPlaceableTile.Add(tile);
+                }
+            }
+            foreach (TileControl tile in wallTile)
+            {
+                if (tile.I != 2)
+                {
+                    placeableTile.Add(tile);
+                }
+                else
+                {
+                    notPlaceableTile.Add(tile);
+                }
+            }
+            foreach (TileControl tile in notWalkableTiles)
+            {
+                notPlaceableTile.Add(tile);
 
+            }
         }
 
-        foreach (Vector3Int tile in notWalkableTiles)
-        {
-            notPlaceableTile.Add(tile);
 
-        }
-
-         CreateTiles();
+        CreateTiles();
     }
     public void ChangeTileType(TileButton button)
     {
@@ -94,23 +115,30 @@ public class TileMapManager : MonoBehaviour
         else
         {
             CreateTiles();
-             tileType = button.MyTileType;
+            tileType = button.MyTileType;
         }
-       
+
     }
     private void ChangeTile(Vector3Int clickPos)
     {
-        if (placeableTile.Contains(clickPos))
-        {
-            if (tileType == TileType.Table)
-            {
-                tileMap[0].SetTile(clickPos, tile[0]);
-                aStar.ChangeTileAstar(clickPos);
-                AdjustmentList(clickPos);
-                CreateTiles();
-            }
-        }
 
+        foreach (TileControl tileControl in placeableTile)
+        {
+            if (tileControl.Position == clickPos)
+            {
+               
+                if (tileType == TileType.Table)
+                {
+
+                    tileMap[0].SetTile(clickPos, tile[0]);
+                    aStar.ChangeTileAstar(clickPos);
+                    AdjustmentList(new TileControl(clickPos, tileControl.I));
+                    CreateTiles();
+                    break;
+                }
+            }
+
+        }
 
     }
 
@@ -123,60 +151,47 @@ public class TileMapManager : MonoBehaviour
 
     public void CreateTiles()
     {
-        foreach (Vector3Int tile in placeableTile)
+        foreach (TileControl tile in placeableTile)
         {
-            ColorTile(tile, placeable);
+            ColorTile(tile.Position, placeable);
         }
 
-        foreach (Vector3Int tile in notPlaceableTile)
+        foreach (TileControl tile in notPlaceableTile)
         {
-            ColorTile(tile, notPlaceable);
+            ColorTile(tile.Position, notPlaceable);
         }
     }
 
-    void AdjustmentList(Vector3Int pos)
+    void AdjustmentList(TileControl tileControl)
     {
-         placeableTile.Remove(pos);
-        notPlaceableTile.Add(pos);
-        if(tileMap[1].GetTile(new Vector3Int(pos.x+1,pos.y,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x+1,pos.y,pos.z)))
+        placeableTile.Remove(tileControl);
+        notPlaceableTile.Add(tileControl);
+      
+
+        for (int x = -1; x <= 1; x++)
         {
-            placeableTile.Remove(new Vector3Int(pos.x+1,pos.y,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x+1,pos.y,pos.z));
+            for (int y = -1; y <=1; y++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    if (tileMap[1].GetTile(new Vector3Int(tileControl.Position.x + x, tileControl.Position.y + y, tileControl.Position.z)) && placeableTile.Contains(new TileControl(new Vector3Int(tileControl.Position.x + x, tileControl.Position.y + y, tileControl.Position.z), k)))
+                    {
+                        Debug.Log(x+","+y);
+                        placeableTile.Remove(new TileControl(new Vector3Int(tileControl.Position.x + x, tileControl.Position.y + y, tileControl.Position.z), k));
+                        notPlaceableTile.Add(new TileControl(new Vector3Int(tileControl.Position.x + x, tileControl.Position.y + y, tileControl.Position.z), k));
+                      
+                    }
+                    if (tileMap[1].GetTile(new Vector3Int(tileControl.Position.x - x, tileControl.Position.y - y, tileControl.Position.z)) && placeableTile.Contains(new TileControl(new Vector3Int(tileControl.Position.x - x, tileControl.Position.y - y, tileControl.Position.z), k)))
+                    {
+                        placeableTile.Remove(new TileControl(new Vector3Int(tileControl.Position.x - x, tileControl.Position.y - y, tileControl.Position.z), k));
+                        notPlaceableTile.Add(new TileControl(new Vector3Int(tileControl.Position.x - x, tileControl.Position.y - y, tileControl.Position.z), k));
+                       
+                    }
+                }
+
+            }
+
         }
-        if(tileMap[1].GetTile(new Vector3Int(pos.x-1,pos.y,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x-1,pos.y,pos.z)))
-        {
-            placeableTile.Remove(new Vector3Int(pos.x-1,pos.y,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x-1,pos.y,pos.z));
-        }
-        if(tileMap[1].GetTile(new Vector3Int(pos.x,pos.y+1,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x,pos.y+1,pos.z)))
-        {
-            placeableTile.Remove(new Vector3Int(pos.x,pos.y+1,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x,pos.y+1,pos.z));
-        }
-        if(tileMap[1].GetTile(new Vector3Int(pos.x,pos.y-1,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x,pos.y-1,pos.z)))
-        {
-            placeableTile.Remove(new Vector3Int(pos.x,pos.y-1,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x,pos.y-1,pos.z));
-        }
-        if(tileMap[1].GetTile(new Vector3Int(pos.x+1,pos.y+1,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x+1,pos.y+1,pos.z)))
-        {
-            placeableTile.Remove(new Vector3Int(pos.x+1,pos.y+1,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x+1,pos.y+1,pos.z));
-        }
-        if(tileMap[1].GetTile(new Vector3Int(pos.x+1,pos.y-1,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x+1,pos.y-1,pos.z)))
-        {
-            placeableTile.Remove(new Vector3Int(pos.x+1,pos.y-1,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x+1,pos.y-1,pos.z));
-        }
-        if(tileMap[1].GetTile(new Vector3Int(pos.x-1,pos.y+1,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x-1,pos.y+1,pos.z)))
-        {
-            placeableTile.Remove(new Vector3Int(pos.x-1,pos.y+1,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x-1,pos.y+1,pos.z));
-        }
-        if(tileMap[1].GetTile(new Vector3Int(pos.x-1,pos.y-1,pos.z))&&placeableTile.Contains(new Vector3Int(pos.x-1,pos.y-1,pos.z)))
-        {
-            placeableTile.Remove(new Vector3Int(pos.x-1,pos.y-1,pos.z));
-            notPlaceableTile.Add(new Vector3Int(pos.x-1,pos.y-1,pos.z));
-        }
+        
     }
 }

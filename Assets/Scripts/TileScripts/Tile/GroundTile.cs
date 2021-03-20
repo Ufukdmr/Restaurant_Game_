@@ -6,14 +6,24 @@ using UnityEngine.Tilemaps;
 
 public class GroundTile : Tile
 {
-    private Vector3Int position;
-
-    public Vector3Int Position { get => position;}
-
+    
     public override bool StartUp(Vector3Int position,ITilemap tilemap,GameObject go)
     {
-        AStar.GroundTile.Add(position);
-        this.position=position;
+        TileControl tile=new TileControl(position,-1);
+       if(this.sprite.name=="Z-1")
+       {
+           tile=new TileControl(position,0);
+       }
+       else if(this.sprite.name=="Z-2")
+       {
+           tile=new TileControl(position,1);
+       }
+       else if(this.sprite.name=="Z-3")
+       {
+           tile=new TileControl(position,2);
+       }
+        AStar.GroundTile.Add(tile);
+        
         return base.StartUp(position,tilemap,go);
         
     }
