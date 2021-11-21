@@ -23,7 +23,8 @@ public class WallTile : Tile
        {
            tile=new TileControl(position,2);
        }
-        AStar.WallTile.Add(tile);
+        AStar.WallTile.Add(tile.Position);
+        AStar.TileControls.Add(tile);
     
         return base.StartUp(position, tilemap, go);
     }

@@ -36,17 +36,22 @@ public class AStar : MonoBehaviour
 
     private Dictionary<Vector3Int, Node> allNodes = new Dictionary<Vector3Int, Node>();
 
-    private static HashSet<TileControl> notWalkableTile = new HashSet<TileControl>();
+    private static HashSet<Vector3Int> notWalkableTile = new HashSet<Vector3Int>();
 
-    public static HashSet<TileControl> NotWalkableTile { get => notWalkableTile; }
+    public static HashSet<Vector3Int> NotWalkableTile { get => notWalkableTile; }
 
-    private static HashSet<TileControl> groundTile = new HashSet<TileControl>();
+     private static HashSet<TileControl> tileControls = new HashSet<TileControl>();
 
-    public static HashSet<TileControl> GroundTile { get => groundTile; }
+    public static HashSet<TileControl> TileControls { get => tileControls; }
 
-    private static HashSet<TileControl> wallTile = new HashSet<TileControl>();
 
-    public static HashSet<TileControl> WallTile { get => wallTile; }
+    private static HashSet<Vector3Int> groundTile = new HashSet<Vector3Int>();
+
+    public static HashSet<Vector3Int> GroundTile { get => groundTile; }
+
+    private static HashSet<Vector3Int> wallTile = new HashSet<Vector3Int>();
+
+    public static HashSet<Vector3Int> WallTile { get => wallTile; }
 
     private bool neighborIsNotWalkable = false;
     private bool neigborIsWall = false;
@@ -106,17 +111,14 @@ public class AStar : MonoBehaviour
                 Vector3Int neighborPos = new Vector3Int(parentPosition.x - x, parentPosition.y - y, parentPosition.z);
                 
                 if (y != 0 || x != 0)
-                {
-                    IsTrue(neighborPos);
-                    if (neighborPos != startPos && !neighborIsNotWalkable && !neigborIsWall && tileMap.GetTile(neighborPos))
+                {                 
+                    if (neighborPos != startPos && !NotWalkableTile.Contains(neighborPos) && tileMap.GetTile(neighborPos))
                     {
                        
                         Node neighbor = GetNode(neighborPos);
                         neighbors.Add(neighbor);
                         
                     }
-                     neigborIsWall=false;
-                        neighborIsNotWalkable=false;
                 }
             }
         }
@@ -228,46 +230,21 @@ public class AStar : MonoBehaviour
 
     public void ChangeTileAstar(Vector3Int clickPos)
     {
-        if (groundTile.Contains(new TileControl(clickPos, 0)) || wallTile.Contains(new TileControl(clickPos, 0)))
+        if (groundTile.Contains(clickPos)||wallTile.Contains(clickPos))
         {
-            tileMap.SetTile(clickPos, notWalkableTiles[0]);
-        }
-        else if (groundTile.Contains(new TileControl(clickPos, 1)) || wallTile.Contains(new TileControl(clickPos, 1)))
-        {
-            tileMap.SetTile(clickPos, notWalkableTiles[1]);
-        }
-        else if (groundTile.Contains(new TileControl(clickPos, 2)) || wallTile.Contains(new TileControl(clickPos, 2)))
-        {
-            tileMap.SetTile(clickPos, notWalkableTiles[2]);
-        }
-
+            foreach(TileControl tile in tileControls)
+            {
+                if(tile.Position==clickPos)
+                {
+                    tileMap.SetTile(clickPos, notWalkableTiles[tile.I]);
+                }
+            }
+        }     
         TileMapManager.MyInstance.CreateTiles();
     }
 
     public void TileMapChange()
     {
-        TileMapManager.MyInstance.Initialize(GroundTile, NotWalkableTile, WallTile);
-    }
-
-    public void IsTrue(Vector3Int neighborpos)
-    {
-        foreach (TileControl tile in notWalkableTile)
-        {
-            if (tile.Position == neighborpos)
-            {
-                neighborIsNotWalkable=true;                
-                break;
-            }
-
-        }
-        foreach (TileControl tile in wallTile)
-        {
-            if (tile.Position == neighborpos)
-            {
-                neigborIsWall=true;
-               
-                break;
-            }
-        }
+        TileMapManager.MyInstance.Initialize(GroundTile, NotWalkableTile, WallTile,tileControls);
     }
 }

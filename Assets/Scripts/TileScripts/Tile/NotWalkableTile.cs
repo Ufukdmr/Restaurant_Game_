@@ -22,7 +22,8 @@ public class NotWalkableTile : Tile
        {
            tile=new TileControl(position,2);
        }
-        AStar.NotWalkableTile.Add(tile);
+        AStar.NotWalkableTile.Add(tile.Position);
+        AStar.TileControls.Add(tile);
         return base.StartUp(position,tilemap,go);
     }
 

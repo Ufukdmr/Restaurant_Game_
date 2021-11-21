@@ -22,7 +22,8 @@ public class GroundTile : Tile
        {
            tile=new TileControl(position,2);
        }
-        AStar.GroundTile.Add(tile);
+       AStar.GroundTile.Add(tile.Position);
+        AStar.TileControls.Add(tile);
         
         return base.StartUp(position,tilemap,go);
         
